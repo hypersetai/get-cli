@@ -1,0 +1,11 @@
+{
+  "version": "0.1.0",
+  "published_at": "2026-03-05T09:25:22Z",
+  "targets": {
+    "darwin-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.1.0/hyperset-darwin-arm64-v0.1.0.tar.gz","sha256":"003df8ff1844d69b2e206757bfa402c88f5fc3c42fdfb5133b6ed6e7597f637b"},
+    "darwin-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.1.0/hyperset-darwin-x64-v0.1.0.tar.gz","sha256":"4f40f3df8da430cf8ed32241814aee7aa9dcd3089aaae6961452fa956d9f3103"},
+    "linux-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.1.0/hyperset-linux-arm64-v0.1.0.tar.gz","sha256":"eeab6c1102f9f25a12ce4742f3bd630e39e98f74245527d31d0fe72382419c46"},
+    "linux-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.1.0/hyperset-linux-x64-v0.1.0.tar.gz","sha256":"f1c3681ab28e51bde54bf4f2062864f15e855148b2c3c5554640947d074271fd"},
+    "win32-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.1.0/hyperset-win32-x64-v0.1.0.zip","sha256":"8e30dd92a495fb9a7033355c7c62bf8b9f40a9d85ae3081295b58725e1759974"}
+  }
+}
