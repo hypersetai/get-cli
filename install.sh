@@ -14,6 +14,7 @@ NO_MODIFY_PATH="false"
 BINARY_PATH=""
 DO_UNINSTALL="false"
 DO_PURGE="false"
+tmp_dir=""
 
 usage() {
   cat <<EOF
@@ -271,7 +272,7 @@ update_path() {
 }
 
 download_and_install() {
-  local target version_tag manifest_url archive_url checksum archive_name archive_file tmp_dir sha_cmd actual installed_version
+  local target version_tag manifest_url archive_url checksum archive_name archive_file sha_cmd actual installed_version
   target="$(detect_target)"
   case "${target}" in
     darwin-x64|darwin-arm64|linux-x64|linux-arm64|win32-x64) ;;
