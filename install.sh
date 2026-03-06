@@ -16,6 +16,16 @@ DO_UNINSTALL="false"
 DO_PURGE="false"
 tmp_dir=""
 
+if [ -t 1 ]; then
+  GREEN='\033[0;32m'
+  CYAN='\033[0;36m'
+  YELLOW='\033[1;33m'
+  BOLD='\033[1m'
+  RESET='\033[0m'
+else
+  GREEN=''; CYAN=''; YELLOW=''; BOLD=''; RESET=''
+fi
+
 usage() {
   cat <<EOF
 Hyperset CLI Installer
@@ -47,7 +57,7 @@ while [[ $# -gt 0 ]]; do
     -v|--version)
       REQUESTED_VERSION="${2:-}"
       if [[ -z "${REQUESTED_VERSION}" ]]; then
-        echo "Error: --version requires a value"
+        printf "${YELLOW}Error: --version requires a value${RESET}\n" >&2
         exit 1
       fi
       shift 2
@@ -55,7 +65,7 @@ while [[ $# -gt 0 ]]; do
     -b|--binary)
       BINARY_PATH="${2:-}"
       if [[ -z "${BINARY_PATH}" ]]; then
-        echo "Error: --binary requires a path"
+        printf "${YELLOW}Error: --binary requires a path${RESET}\n" >&2
         exit 1
       fi
       shift 2
@@ -63,7 +73,7 @@ while [[ $# -gt 0 ]]; do
     --install-dir)
       INSTALL_DIR="${2:-}"
       if [[ -z "${INSTALL_DIR}" ]]; then
-        echo "Error: --install-dir requires a path"
+        printf "${YELLOW}Error: --install-dir requires a path${RESET}\n" >&2
         exit 1
       fi
       shift 2
@@ -81,7 +91,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "Warning: ignoring unknown argument: $1"
+      printf "${YELLOW}Warning: ignoring unknown argument: $1${RESET}\n" >&2
       shift
       ;;
   esac
@@ -97,7 +107,7 @@ detect_target() {
     Linux*) os="linux" ;;
     MINGW*|MSYS*|CYGWIN*) os="win32" ;;
     *)
-      echo "Unsupported OS: ${raw_os}"
+      printf "${YELLOW}Error: Unsupported OS: ${raw_os}${RESET}\n" >&2
       exit 1
       ;;
   esac
@@ -106,7 +116,7 @@ detect_target() {
     x86_64|amd64) arch="x64" ;;
     arm64|aarch64) arch="arm64" ;;
     *)
-      echo "Unsupported architecture: ${raw_arch}"
+      printf "${YELLOW}Error: Unsupported architecture: ${raw_arch}${RESET}\n" >&2
       exit 1
       ;;
   esac
@@ -186,25 +196,26 @@ remove_install_receipt() {
 
 ensure_installer_requirements() {
   if ! command -v curl >/dev/null 2>&1; then
-    echo "Error: curl is required."
+    printf "${YELLOW}Error: curl is required.${RESET}\n" >&2
     exit 1
   fi
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "Error: python3 is required by this installer."
+    printf "${YELLOW}Error: python3 is required by this installer.${RESET}\n" >&2
     exit 1
   fi
 }
 
 install_from_local_binary() {
   if [[ ! -f "${BINARY_PATH}" ]]; then
-    echo "Error: local binary not found: ${BINARY_PATH}"
+    printf "${YELLOW}Error: local binary not found: ${BINARY_PATH}${RESET}\n" >&2
     exit 1
   fi
   mkdir -p "${INSTALL_DIR}"
   cp "${BINARY_PATH}" "${INSTALL_DIR}/${APP}"
   chmod 755 "${INSTALL_DIR}/${APP}"
   write_install_receipt "local"
-  echo "Installed ${APP} from local binary: ${INSTALL_DIR}/${APP}"
+  printf "\n${GREEN}✓ Hyperset CLI installed from local binary!${RESET}\n\n"
+  printf "  Location:  ${CYAN}${INSTALL_DIR}/${APP}${RESET}\n\n"
 }
 
 perform_uninstall() {
@@ -228,20 +239,20 @@ perform_uninstall() {
     removed="true"
   fi
   if [[ "${removed}" = "true" ]]; then
-    echo "Removed installed binaries from ${INSTALL_DIR}"
+    printf "${GREEN}✓ Removed installed binaries from ${INSTALL_DIR}${RESET}\n"
   else
-    echo "No installed binaries found in ${INSTALL_DIR}"
+    printf "${YELLOW}No installed binaries found in ${INSTALL_DIR}${RESET}\n"
   fi
   remove_install_receipt
   if [[ "${DO_PURGE}" = "true" ]]; then
     rm -rf "${CLI_ROOT}"
-    echo "Purged ${CLI_ROOT}"
+    printf "${GREEN}✓ Purged ${CLI_ROOT}${RESET}\n"
   fi
 }
 
 update_path() {
   if [[ "${NO_MODIFY_PATH}" = "true" ]]; then
-    echo "Skipping PATH modification (--no-modify-path)."
+    printf "${YELLOW}Skipping PATH modification (--no-modify-path).${RESET}\n"
     return
   fi
   if [[ ":${PATH}:" == *":${INSTALL_DIR}:"* ]]; then
@@ -267,8 +278,12 @@ update_path() {
       echo "# hyperset"
       echo "${command}"
     } >> "${config_file}"
-    echo "Added ${INSTALL_DIR} to PATH in ${config_file}"
   fi
+  printf "${YELLOW}⚠ Setup notes:${RESET}\n"
+  printf "  Native installation exists but ${CYAN}${INSTALL_DIR}${RESET} is not in your PATH.\n"
+  printf "  It has been added to ${CYAN}${config_file}${RESET}.\n"
+  printf "  Restart your terminal or run:\n"
+  printf "    ${BOLD}source ${config_file}${RESET}\n\n"
 }
 
 download_and_install() {
@@ -277,7 +292,7 @@ download_and_install() {
   case "${target}" in
     darwin-x64|darwin-arm64|linux-x64|linux-arm64|win32-x64) ;;
     *)
-      echo "Unsupported target for installer MVP: ${target}"
+      printf "${YELLOW}Error: Unsupported target for installer MVP: ${target}${RESET}\n" >&2
       exit 1
       ;;
   esac
@@ -296,7 +311,7 @@ download_and_install() {
   archive_url="$(extract_from_manifest "${tmp_dir}/manifest.json" "${target}" "url")"
   checksum="$(extract_from_manifest "${tmp_dir}/manifest.json" "${target}" "sha256")"
   if [[ -z "${archive_url}" || -z "${checksum}" ]]; then
-    echo "Error: manifest missing url/sha256 for target ${target}"
+    printf "${YELLOW}Error: manifest missing url/sha256 for target ${target}${RESET}\n" >&2
     exit 1
   fi
 
@@ -306,7 +321,7 @@ download_and_install() {
 
   sha_cmd="$(sha256_cmd)"
   if [[ -z "${sha_cmd}" ]]; then
-    echo "Error: sha256sum or shasum is required."
+    printf "${YELLOW}Error: sha256sum or shasum is required.${RESET}\n" >&2
     exit 1
   fi
   if [[ "${sha_cmd}" = "sha256sum" ]]; then
@@ -315,14 +330,14 @@ download_and_install() {
     actual="$(shasum -a 256 "${archive_file}" | awk '{print $1}')"
   fi
   if [[ "${actual}" != "${checksum}" ]]; then
-    echo "Error: checksum mismatch for ${archive_name}"
+    printf "${YELLOW}Error: checksum mismatch for ${archive_name}${RESET}\n" >&2
     exit 1
   fi
 
   mkdir -p "${INSTALL_DIR}"
   if [[ "${archive_name}" == *.zip ]]; then
     if ! command -v unzip >/dev/null 2>&1; then
-      echo "Error: unzip is required for ${archive_name}"
+      printf "${YELLOW}Error: unzip is required for ${archive_name}${RESET}\n" >&2
       exit 1
     fi
     unzip -q "${archive_file}" -d "${tmp_dir}/extract"
@@ -340,7 +355,7 @@ download_and_install() {
     runner_name="hyperset-runner"
   fi
   if [[ ! -f "${tmp_dir}/extract/${cli_name}" ]]; then
-    echo "Error: ${cli_name} missing from archive"
+    printf "${YELLOW}Error: ${cli_name} missing from archive${RESET}\n" >&2
     exit 1
   fi
   mv "${tmp_dir}/extract/${cli_name}" "${INSTALL_DIR}/${APP}"
@@ -353,7 +368,10 @@ download_and_install() {
     installed_version="${REQUESTED_VERSION#v}"
   fi
   write_install_receipt "${installed_version:-unknown}"
-  echo "Installed ${APP} to ${INSTALL_DIR}/${APP}"
+  printf "\n${GREEN}✓ Hyperset CLI successfully installed!${RESET}\n\n"
+  printf "  Version:   ${CYAN}${installed_version}${RESET}\n"
+  printf "  Location:  ${CYAN}${INSTALL_DIR}/${APP}${RESET}\n\n"
+  printf "  Next: Run ${BOLD}${APP} --help${RESET} to get started\n\n"
 }
 
 main() {
@@ -369,7 +387,7 @@ main() {
   fi
   download_and_install
   update_path
-  echo "Run: ${APP} --version"
+  printf "${GREEN}✓ Installation complete!${RESET}\n"
 }
 
 main "$@"
