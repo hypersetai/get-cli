@@ -51,6 +51,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Write-Ok    { param([string]$msg) Write-Host "✓ $msg" -ForegroundColor Green }
+function Write-Warn  { param([string]$msg) Write-Host "⚠ $msg" -ForegroundColor Yellow }
+function Write-Value { param([string]$label, [string]$val)
+    Write-Host "  $label" -NoNewline; Write-Host $val -ForegroundColor Cyan }
+
 $APP            = "hyperset"
 $DIST_REPO      = if ($env:HYPERSET_DIST_REPO) { $env:HYPERSET_DIST_REPO } else { "hypersetai/get-cli" }
 $DIST_BRANCH    = if ($env:HYPERSET_DIST_BRANCH) { $env:HYPERSET_DIST_BRANCH } else { "main" }
@@ -149,23 +154,23 @@ function Invoke-Uninstall {
         }
     }
     if ($removed) {
-        Write-Host "Removed installed binaries from $ActualInstDir"
+        Write-Ok "Removed installed binaries from $ActualInstDir"
     }
     else {
-        Write-Host "No installed binaries found in $ActualInstDir"
+        Write-Warn "No installed binaries found in $ActualInstDir"
     }
     Remove-InstallReceipt
     if ($Purge) {
         if (Test-Path $CliRoot) {
             Remove-Item -Recurse -Force $CliRoot
-            Write-Host "Purged $CliRoot"
+            Write-Ok "Purged $CliRoot"
         }
     }
 }
 
 function Update-UserPath {
     if ($NoModifyPath) {
-        Write-Host "Skipping PATH modification (-NoModifyPath)."
+        Write-Warn "Skipping PATH modification (-NoModifyPath)."
         return
     }
     $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
@@ -175,8 +180,18 @@ function Update-UserPath {
     }
     $newPath = "${ActualInstDir};${currentPath}"
     [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-    Write-Host "Added $ActualInstDir to user PATH."
-    Write-Host "Restart your terminal for PATH changes to take effect."
+
+    $sessionEntries = $env:PATH -split ";"
+    if (-not ($sessionEntries -contains $ActualInstDir)) {
+        Write-Host ""
+        Write-Warn "Setup notes:"
+        Write-Host "  Native installation exists but " -NoNewline
+        Write-Host $ActualInstDir -ForegroundColor Cyan -NoNewline
+        Write-Host " is not in your PATH."
+        Write-Host "  Add it by opening: System Properties -> Environment Variables -> Edit User PATH -> New"
+        Write-Host "  Add the path above. Then restart your terminal."
+        Write-Host ""
+    }
 }
 
 function Install-Cli {
@@ -190,7 +205,8 @@ function Install-Cli {
         "https://raw.githubusercontent.com/${DIST_REPO}/${DIST_BRANCH}/manifest.json"
     }
 
-    Write-Host "Fetching manifest from $manifestUrl ..."
+    Write-Host "Setting up Hyperset CLI..."
+    Write-Host "Fetching manifest..." -ForegroundColor DarkGray
     $manifest = Get-ManifestContent -Url $manifestUrl
     $entry    = Get-TargetEntry -Manifest $manifest -Target $target
 
@@ -210,10 +226,10 @@ function Install-Cli {
         $archiveName = Split-Path $archiveUrl -Leaf
         $archivePath = Join-Path $tmpDir $archiveName
 
-        Write-Host "Downloading $archiveName ..."
+        Write-Host "Downloading $archiveName ..." -ForegroundColor DarkGray
         Invoke-WebRequest -Uri $archiveUrl -OutFile $archivePath -UseBasicParsing
 
-        Write-Host "Verifying checksum ..."
+        Write-Host "Verifying checksum ..." -ForegroundColor DarkGray
         Test-Checksum -FilePath $archivePath -Expected $expectedSha
 
         $extractDir = Join-Path $tmpDir "extract"
@@ -231,15 +247,24 @@ function Install-Cli {
         }
 
         Copy-Item -Path $cliBin -Destination (Join-Path $ActualInstDir "hyperset.exe") -Force
-        Write-Host "Installed hyperset.exe to $ActualInstDir"
 
         $runnerBin = Join-Path $extractDir "hyperset-runner.exe"
         if (Test-Path $runnerBin) {
             Copy-Item -Path $runnerBin -Destination (Join-Path $ActualInstDir "hyperset-runner.exe") -Force
-            Write-Host "Installed hyperset-runner.exe to $ActualInstDir"
         }
 
         Write-InstallReceipt -InstalledVersion $installedVersion
+
+        Write-Host ""
+        Write-Ok "Hyperset CLI successfully installed!"
+        Write-Host ""
+        Write-Value "Version:  " $installedVersion
+        Write-Value "Location: " (Join-Path $ActualInstDir "hyperset.exe")
+        Write-Host ""
+        Write-Host "  Next: Run " -NoNewline
+        Write-Host "hyperset --help" -ForegroundColor White -NoNewline
+        Write-Host " to get started"
+        Write-Host ""
     }
     finally {
         Remove-Item -Recurse -Force $tmpDir -ErrorAction SilentlyContinue
@@ -258,4 +283,4 @@ if ($Uninstall -or $Purge) {
 
 Install-Cli
 Update-UserPath
-Write-Host "Run: ${APP} --version"
+Write-Ok "Installation complete!"
