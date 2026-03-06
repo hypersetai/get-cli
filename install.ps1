@@ -97,17 +97,18 @@ function Get-ManifestContent {
 
 function Get-TargetEntry {
     param($Manifest, [string]$Target)
-    $targets = $Manifest.targets
-    if (-not $targets) {
+    $targetsProp = $Manifest.PSObject.Properties['targets']
+    if (-not $targetsProp) {
         Write-Error "Manifest has no 'targets' field."
         exit 1
     }
-    $entry = $targets.$Target
-    if (-not $entry) {
+    $targets = $targetsProp.Value
+    $entryProp = $targets.PSObject.Properties[$Target]
+    if (-not $entryProp) {
         Write-Error "No manifest entry for target '${Target}'."
         exit 1
     }
-    return $entry
+    return $entryProp.Value
 }
 
 function Test-Checksum {
