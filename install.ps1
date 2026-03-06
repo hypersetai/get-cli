@@ -22,6 +22,9 @@
 .PARAMETER Purge
     Remove the installed binary and all CLI state ($HOME\.hyperset\cli).
 
+.PARAMETER Binary
+    Install from a local binary path instead of downloading from GitHub.
+
 .PARAMETER Help
     Show this help message.
 
@@ -41,6 +44,7 @@
 [CmdletBinding()]
 param(
     [string]  $Version      = "",
+    [string]  $Binary       = "",
     [string]  $InstallDir   = "",
     [switch]  $NoModifyPath,
     [switch]  $Uninstall,
@@ -74,6 +78,7 @@ Usage: install.ps1 [options]
 
 Parameters:
   -Version <version>     Install specific version (e.g. 1.2.3 or v1.2.3)
+  -Binary <path>         Install from local binary path instead of downloading
   -InstallDir <path>     Install directory (default: `$HOME\.hyperset\cli\bin)
   -NoModifyPath          Do not add install directory to user PATH
   -Uninstall             Remove installed binary
@@ -83,6 +88,7 @@ Parameters:
 Examples:
   irm https://hypersetai.com/cli/install.ps1 | iex
   .\install.ps1 -Version 1.2.3
+  .\install.ps1 -Binary .\hyperset.exe
   .\install.ps1 -Uninstall
   .\install.ps1 -Uninstall -Purge
 "@
@@ -91,8 +97,7 @@ Examples:
 function Get-ManifestContent {
     param([string]$Url)
     try {
-        $response = Invoke-WebRequest -Uri $Url -UseBasicParsing -ErrorAction Stop
-        return $response.Content | ConvertFrom-Json
+        return Invoke-RestMethod -Uri $Url -UseBasicParsing -ErrorAction Stop
     }
     catch {
         Write-Error "Failed to fetch manifest from ${Url}: $_"
@@ -134,7 +139,7 @@ function Write-InstallReceipt {
         channel      = "powershell"
         version      = $InstalledVersion
         install_dir  = $ActualInstDir
-        installed_at = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ" -AsUTC)
+        installed_at = [System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
     }
     $receipt | ConvertTo-Json | Set-Content -Path $ReceiptPath -Encoding UTF8
 }
@@ -192,6 +197,24 @@ function Update-UserPath {
         Write-Host "  Add the path above. Then restart your terminal."
         Write-Host ""
     }
+}
+
+function Install-FromLocalBinary {
+    if (-not (Test-Path $Binary)) {
+        Write-Error "Local binary not found: $Binary"
+        exit 1
+    }
+    if (-not (Test-Path $ActualInstDir)) {
+        New-Item -ItemType Directory -Path $ActualInstDir -Force | Out-Null
+    }
+    $destName = if ($Binary -match '\.exe$') { "hyperset.exe" } else { "hyperset" }
+    Copy-Item -Path $Binary -Destination (Join-Path $ActualInstDir $destName) -Force
+    Write-InstallReceipt -InstalledVersion "local"
+    Write-Host ""
+    Write-Ok "Hyperset CLI installed from local binary!"
+    Write-Host ""
+    Write-Value "Location: " (Join-Path $ActualInstDir $destName)
+    Write-Host ""
 }
 
 function Install-Cli {
@@ -281,6 +304,11 @@ if ($Uninstall -or $Purge) {
     exit 0
 }
 
-Install-Cli
+if ($Binary) {
+    Install-FromLocalBinary
+}
+else {
+    Install-Cli
+}
 Update-UserPath
 Write-Ok "Installation complete!"
