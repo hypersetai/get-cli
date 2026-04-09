@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Hyperset CLI installer for Windows.
 
@@ -184,17 +184,23 @@ function Update-UserPath {
         return
     }
     $newPath = "${ActualInstDir};${currentPath}"
-    [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-
-    $sessionEntries = $env:PATH -split ";"
-    if (-not ($sessionEntries -contains $ActualInstDir)) {
+    try {
+        [Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
         Write-Host ""
         Write-Warn "Setup notes:"
-        Write-Host "  Native installation exists but " -NoNewline
+        Write-Host "  " -NoNewline
         Write-Host $ActualInstDir -ForegroundColor Cyan -NoNewline
-        Write-Host " is not in your PATH."
-        Write-Host "  Add it by opening: System Properties -> Environment Variables -> Edit User PATH -> New"
-        Write-Host "  Add the path above. Then restart your terminal."
+        Write-Host " has been added to your PATH."
+        Write-Host "  Restart your terminal for the change to take effect."
+        Write-Host ""
+    }
+    catch {
+        Write-Host ""
+        Write-Warn "Setup notes:"
+        Write-Host "  Could not update PATH automatically: $_"
+        Write-Host "  Add it manually: System Properties -> Environment Variables -> Edit User PATH -> New"
+        Write-Host "  Add: " -NoNewline
+        Write-Host $ActualInstDir -ForegroundColor Cyan
         Write-Host ""
     }
 }
