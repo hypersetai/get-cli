@@ -255,9 +255,6 @@ update_path() {
     printf "${YELLOW}Skipping PATH modification (--no-modify-path).${RESET}\n"
     return
   fi
-  if [[ ":${PATH}:" == *":${INSTALL_DIR}:"* ]]; then
-    return
-  fi
   local shell_name config_file command
   shell_name="$(basename "${SHELL:-bash}")"
   case "${shell_name}" in
@@ -279,11 +276,12 @@ update_path() {
       echo "${command}"
     } >> "${config_file}"
   fi
-  printf "${YELLOW}⚠ Setup notes:${RESET}\n"
-  printf "  Native installation exists but ${CYAN}${INSTALL_DIR}${RESET} is not in your PATH.\n"
-  printf "  It has been added to ${CYAN}${config_file}${RESET}.\n"
-  printf "  Restart your terminal or run:\n"
-  printf "    ${BOLD}source ${config_file}${RESET}\n\n"
+  if [[ ":${PATH}:" != *":${INSTALL_DIR}:"* ]]; then
+    printf "${YELLOW}⚠ Setup notes:${RESET}\n"
+    printf "  ${CYAN}${INSTALL_DIR}${RESET} has been added to ${CYAN}${config_file}${RESET}.\n"
+    printf "  Restart your terminal or run:\n"
+    printf "    ${BOLD}source ${config_file}${RESET}\n\n"
+  fi
 }
 
 download_and_install() {
