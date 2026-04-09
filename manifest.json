@@ -1,11 +1,11 @@
 {
-  "version": "0.3.0",
-  "published_at": "2026-04-09T10:49:41Z",
+  "version": "0.3.1",
+  "published_at": "2026-04-09T11:49:28Z",
   "targets": {
-    "darwin-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.0/hyperset-darwin-arm64-v0.3.0.tar.gz","sha256":"7dd5b0fc3d8ad377dedfe49e34ae7759618e30e1a8aec7e072e696ef18f72e01"},
-    "darwin-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.0/hyperset-darwin-x64-v0.3.0.tar.gz","sha256":"e89c3c042547616a86c8245fe60ab6a13dfa780c9319e363d9f5d0c0e87bab8a"},
-    "linux-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.0/hyperset-linux-arm64-v0.3.0.tar.gz","sha256":"2ce3f7a3bbdb6c6223aa455ff82b511c385b69d3d867f2291035cf9263fbabbc"},
-    "linux-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.0/hyperset-linux-x64-v0.3.0.tar.gz","sha256":"9df202da013530c6c34a3b6aed3a4534ae59e371e61fa43c32876612c5cb48ba"},
-    "win32-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.0/hyperset-win32-x64-v0.3.0.zip","sha256":"8a82059648e72e68fd5ec1457f9166411cb1cc0d63a3a9c5c1dead83c9b4bee8"}
+    "darwin-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.1/hyperset-darwin-arm64-v0.3.1.tar.gz","sha256":"7fb1897917bd4fc4c6c0257c6e755802ff0bef9b0cd4371dfad786c6b1185b81"},
+    "darwin-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.1/hyperset-darwin-x64-v0.3.1.tar.gz","sha256":"18d206266667941700525e8897b21cc06fd287649c4168e98607f1e267174c12"},
+    "linux-arm64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.1/hyperset-linux-arm64-v0.3.1.tar.gz","sha256":"387d8c7eab26c00399da7e138236b385503b806c2d1cc48ee76d889200565a01"},
+    "linux-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.1/hyperset-linux-x64-v0.3.1.tar.gz","sha256":"489d0ca4a15720f4ceb39bcb41ea5b6a70f0f6ebdd60257708380938f1cce83e"},
+    "win32-x64": {"url":"https://github.com/hypersetai/get-cli/releases/download/v0.3.1/hyperset-win32-x64-v0.3.1.zip","sha256":"6de5678e7798d2df0da8249b4dfcaeb24398010d349043ba339d4759406e5f32"}
   }
 }
