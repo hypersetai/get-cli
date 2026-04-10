@@ -152,7 +152,7 @@ function Remove-InstallReceipt {
 
 function Invoke-Uninstall {
     $removed = $false
-    foreach ($bin in @("${APP}.exe", "hyperset-runner.exe")) {
+    foreach ($bin in @("${APP}.exe", "${APP}", "hyperset-runner.exe")) {
         $binPath = Join-Path $ActualInstDir $bin
         if (Test-Path $binPath) {
             Remove-Item -Path $binPath -Force
@@ -206,6 +206,18 @@ function Update-UserPath {
     }
 }
 
+function Write-GitBashShim {
+    # Git Bash / MSYS2 / Cygwin do not use PATHEXT, so they won't auto-resolve
+    # hyperset.exe. Write a tiny bash wrapper named "hyperset" (no extension)
+    # so the command works in every Windows shell environment.
+    $shimPath = Join-Path $ActualInstDir $APP
+    $lf = "`n"
+    # Single-quoted strings: $ and backticks are NOT interpreted by PowerShell.
+    $shimContent = '#!/usr/bin/env bash' + $lf + 'exec "$(dirname "$0")/hyperset.exe" "$@"' + $lf
+    # UTF-8 without BOM ($false) + LF line endings = portable bash script on Windows.
+    [System.IO.File]::WriteAllText($shimPath, $shimContent, (New-Object System.Text.UTF8Encoding $false))
+}
+
 function Install-FromLocalBinary {
     if (-not (Test-Path $Binary)) {
         Write-Error "Local binary not found: $Binary"
@@ -216,6 +228,7 @@ function Install-FromLocalBinary {
     }
     $destName = "hyperset.exe"
     Copy-Item -Path $Binary -Destination (Join-Path $ActualInstDir $destName) -Force
+    Write-GitBashShim
     Write-InstallReceipt -InstalledVersion "local"
     Write-Host ""
     Write-Ok "Hyperset CLI installed from local binary!"
@@ -225,8 +238,12 @@ function Install-FromLocalBinary {
 }
 
 function Install-Cli {
-    $arch   = if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) { "arm64" } else { "x64" }
-    $target = "win32-$arch"
+    # PROCESSOR_ARCHITEW6432 is set when a 32-bit process (WoW64) runs on a 64-bit OS;
+    # it holds the real native arch. Fall back to PROCESSOR_ARCHITECTURE otherwise.
+    # This avoids [RuntimeInformation]::ProcessArchitecture which requires .NET 4.7.1+.
+    $rawArch = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
+    $arch    = if ($rawArch -eq "ARM64") { "arm64" } else { "x64" }
+    $target  = "win32-$arch"
 
     $manifestUrl = if ($Version) {
         $vtag = if ($Version.StartsWith("v")) { $Version } else { "v${Version}" }
@@ -278,6 +295,7 @@ function Install-Cli {
         }
 
         Copy-Item -Path $cliBin -Destination (Join-Path $ActualInstDir "hyperset.exe") -Force
+        Write-GitBashShim
 
         $runnerBin = Join-Path $extractDir "hyperset-runner.exe"
         if (Test-Path $runnerBin) {
