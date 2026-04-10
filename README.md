@@ -2,7 +2,7 @@
 
 Distribution repository for the **Hyperset CLI**.
 
-Latest version: **v0.3.4**
+Latest version: **v0.4.0**
 
 ## Install
 
