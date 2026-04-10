@@ -1,9 +1,9 @@
-﻿<#
+<#
 .SYNOPSIS
     Hyperset CLI installer for Windows.
 
 .DESCRIPTION
-    Downloads and installs the hyperset CLI binary for Windows x64.
+    Downloads and installs the hyperset CLI binary for Windows (x64 or arm64).
     Reads the manifest from get-cli, verifies SHA256, and installs to the target directory.
     Also installs the bundled hyperset-runner binary if present in the archive.
 
@@ -32,7 +32,7 @@
     irm https://hypersetai.com/cli/install.ps1 | iex
 
 .EXAMPLE
-    irm https://hypersetai.com/cli/install.ps1 -OutFile install.ps1
+    iwr https://hypersetai.com/cli/install.ps1 -OutFile install.ps1
     .\install.ps1 -Version 1.2.3
 
 .EXAMPLE
@@ -41,6 +41,7 @@
 .EXAMPLE
     .\install.ps1 -Uninstall -Purge
 #>
+#Requires -Version 5.1
 [CmdletBinding()]
 param(
     [string]  $Version      = "",
@@ -55,8 +56,8 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-function Write-Ok    { param([string]$msg) Write-Host "✓ $msg" -ForegroundColor Green }
-function Write-Warn  { param([string]$msg) Write-Host "⚠ $msg" -ForegroundColor Yellow }
+function Write-Ok    { param([string]$msg) Write-Host "[+] $msg" -ForegroundColor Green }
+function Write-Warn  { param([string]$msg) Write-Host "[!] $msg" -ForegroundColor Yellow }
 function Write-Value { param([string]$label, [string]$val)
     Write-Host "  $label" -NoNewline; Write-Host $val -ForegroundColor Cyan }
 
@@ -213,7 +214,7 @@ function Install-FromLocalBinary {
     if (-not (Test-Path $ActualInstDir)) {
         New-Item -ItemType Directory -Path $ActualInstDir -Force | Out-Null
     }
-    $destName = if ($Binary -match '\.exe$') { "hyperset.exe" } else { "hyperset" }
+    $destName = "hyperset.exe"
     Copy-Item -Path $Binary -Destination (Join-Path $ActualInstDir $destName) -Force
     Write-InstallReceipt -InstalledVersion "local"
     Write-Host ""
@@ -224,7 +225,8 @@ function Install-FromLocalBinary {
 }
 
 function Install-Cli {
-    $target = "win32-x64"
+    $arch   = if ([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) { "arm64" } else { "x64" }
+    $target = "win32-$arch"
 
     $manifestUrl = if ($Version) {
         $vtag = if ($Version.StartsWith("v")) { $Version } else { "v${Version}" }
